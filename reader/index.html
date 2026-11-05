@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-Hant" data-theme="sepia">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="TXT閱讀">
+  <meta name="theme-color" content="#2c241e">
+  <title>TXT 閱讀器</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icon-180.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Library view -->
+  <section id="library" class="view">
+    <header class="lib-header">
+      <h1>我的書架</h1>
+      <label class="btn primary">
+        ＋ 匯入 TXT
+        <input id="fileInput" type="file" accept=".txt,text/plain" hidden>
+      </label>
+    </header>
+    <p id="installHint" class="hint" hidden>
+      提示：在 Safari 按下方「分享」→「加入主畫面」，之後從主畫面開啟就像 App 一樣，並可離線使用。
+      <br>注意：主畫面 App 與 Safari 的資料是分開的，請在主畫面 App 內匯入小說。
+    </p>
+    <ul id="bookList" class="book-list"></ul>
+    <p id="emptyHint" class="hint">書架是空的。按「匯入 TXT」從「檔案」App 選擇小說檔案。</p>
+    <div id="importing" class="hint" hidden>正在匯入…</div>
+  </section>
+
+  <!-- Reader view -->
+  <section id="reader" class="view" hidden>
+    <article id="content"></article>
+
+    <div id="topBar" class="bar top">
+      <button id="backBtn" class="icon-btn" aria-label="書架">‹ 書架</button>
+      <div id="barTitle" class="bar-title"></div>
+      <span class="icon-btn placeholder"></span>
+    </div>
+
+    <div id="bottomBar" class="bar bottom">
+      <div class="progress-row">
+        <span id="progressText"></span>
+      </div>
+      <div class="btn-row">
+        <button id="prevBtn" class="icon-btn">‹ 上一章</button>
+        <button id="tocBtn" class="icon-btn">目錄</button>
+        <button id="settingsBtn" class="icon-btn">Aa</button>
+        <button id="nextBtn" class="icon-btn">下一章 ›</button>
+      </div>
+    </div>
+
+    <!-- Table of contents -->
+    <div id="tocPanel" class="panel-backdrop" hidden>
+      <div class="panel toc">
+        <div class="panel-head">
+          <span>目錄</span>
+          <button class="icon-btn close-panel">完成</button>
+        </div>
+        <ol id="tocList"></ol>
+      </div>
+    </div>
+
+    <!-- Settings -->
+    <div id="settingsPanel" class="panel-backdrop" hidden>
+      <div class="panel sheet">
+        <div class="setting-row">
+          <span class="label">字體大小</span>
+          <button class="seg-btn" data-action="fontDown">A－</button>
+          <span id="fontSizeVal" class="val"></span>
+          <button class="seg-btn" data-action="fontUp">A＋</button>
+        </div>
+        <div class="setting-row">
+          <span class="label">行距</span>
+          <button class="seg-btn" data-action="lhDown">－</button>
+          <span id="lineHeightVal" class="val"></span>
+          <button class="seg-btn" data-action="lhUp">＋</button>
+        </div>
+        <div class="setting-row">
+          <span class="label">背景</span>
+          <button class="seg-btn theme-swatch light" data-theme-set="light">白</button>
+          <button class="seg-btn theme-swatch sepia" data-theme-set="sepia">米黃</button>
+          <button class="seg-btn theme-swatch green" data-theme-set="green">護眼</button>
+          <button class="seg-btn theme-swatch dark" data-theme-set="dark">夜間</button>
+        </div>
+        <div class="setting-row">
+          <span class="label">字型</span>
+          <button class="seg-btn" data-font-set="sans">黑體</button>
+          <button class="seg-btn" data-font-set="serif">宋體</button>
+        </div>
+        <div class="setting-row">
+          <span class="label">文字</span>
+          <button class="seg-btn" data-trad-set="1">繁體</button>
+          <button class="seg-btn" data-trad-set="0">原文</button>
+        </div>
+        <div class="setting-row">
+          <span class="label">點擊翻頁</span>
+          <button class="seg-btn" data-tap-set="1">開</button>
+          <button class="seg-btn" data-tap-set="0">關</button>
+        </div>
+        <p class="hint small">點擊翻頁：點畫面左邊上一頁、右邊下一頁、中間顯示選單。</p>
+      </div>
+    </div>
+  </section>
+
+  <script src="s2t.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
