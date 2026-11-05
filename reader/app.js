@@ -391,7 +391,8 @@ function showChapter(index, paraIndex = 0, atEnd = false) {
     <div class="chapter-nav">
       <button data-nav="-1" ${reader.ch === 0 ? 'disabled' : ''}>‹ 上一章</button>
       <button data-nav="1" ${reader.ch === chapters.length - 1 ? 'disabled' : ''}>下一章 ›</button>
-    </div>`;
+    </div>
+    <div id="pullHint" class="pull-hint">${reader.ch === chapters.length - 1 ? '— 全書完 —' : PULL_HINT_IDLE}</div>`;
 
   const content = $('#content');
   content.innerHTML = html;
@@ -461,6 +462,68 @@ function gotoChapter(delta) {
   const next = reader.ch + delta;
   if (next < 0 || next >= reader.chapters.length) return;
   showChapter(next, 0);
+}
+
+/* ---------- Pull up at chapter end to go to next chapter ---------- */
+
+const PULL_THRESHOLD = 80;
+const PULL_HINT_IDLE = '↑ 繼續上拉進入下一章';
+const PULL_HINT_READY = '↑ 放開進入下一章';
+
+function isAtChapterBottom() {
+  return window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 2;
+}
+
+function isPanelOpen() {
+  return !$('#tocPanel').hidden || !$('#settingsPanel').hidden;
+}
+
+function bindPullToNext() {
+  let startY = null;
+  let ready = false;
+
+  const setHint = (isReady) => {
+    if (ready === isReady) return;
+    ready = isReady;
+    const hint = $('#pullHint');
+    if (hint && reader.ch < reader.chapters.length - 1) {
+      hint.textContent = isReady ? PULL_HINT_READY : PULL_HINT_IDLE;
+      hint.classList.toggle('ready', isReady);
+    }
+  };
+
+  window.addEventListener('touchstart', (e) => {
+    startY = reader.bookId && e.touches.length === 1 && !isPanelOpen() ? e.touches[0].clientY : null;
+    ready = false;
+  }, { passive: true });
+
+  window.addEventListener('touchmove', (e) => {
+    if (startY === null) return;
+    const y = e.touches[0].clientY;
+    // Measure the pull only from the moment the chapter bottom is reached.
+    if (!isAtChapterBottom()) {
+      startY = y;
+      setHint(false);
+      return;
+    }
+    setHint(startY - y >= PULL_THRESHOLD);
+  }, { passive: true });
+
+  window.addEventListener('touchend', () => {
+    if (startY === null) return;
+    const go = ready && reader.ch < reader.chapters.length - 1;
+    startY = null;
+    setHint(false);
+    if (go) {
+      setBars(false);
+      gotoChapter(1);
+    }
+  }, { passive: true });
+
+  window.addEventListener('touchcancel', () => {
+    startY = null;
+    setHint(false);
+  }, { passive: true });
 }
 
 function pageScroll(dir) {
@@ -599,6 +662,8 @@ function bindEvents() {
     else if (t.dataset.tradSet) updateSettings({ traditional: t.dataset.tradSet === '1' }, { rerender: true });
     else if (t.dataset.tapSet) updateSettings({ tapPaging: t.dataset.tapSet === '1' });
   });
+
+  bindPullToNext();
 
   let scrollTimer = null;
   window.addEventListener('scroll', () => {

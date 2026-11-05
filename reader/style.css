@@ -130,6 +130,17 @@ button {
 
 .chapter-nav button:disabled { opacity: 0.35; }
 
+.pull-hint {
+  text-align: center;
+  text-indent: 0;
+  font-size: 14px;
+  color: var(--muted);
+  padding: 12px 0 8px;
+  transition: color 0.15s ease, transform 0.15s ease;
+}
+
+.pull-hint.ready { color: var(--accent); font-weight: 600; transform: scale(1.08); }
+
 .bar {
   position: fixed;
   left: 0;
