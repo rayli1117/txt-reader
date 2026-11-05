@@ -1,4 +1,4 @@
-const CACHE = 'txt-reader-v1';
+const CACHE = 'txt-reader-v2';
 const ASSETS = [
   './',
   'index.html',

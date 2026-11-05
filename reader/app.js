@@ -113,7 +113,35 @@ function cleanLines(text) {
     .replace(/[\f\v\u200b]/g, '')
     .split('\n')
     .map((l) => l.replace(/^[\s\u3000]+|[\s\u3000]+$/g, ''))
-    .filter((l) => l.length > 0 && !DIVIDER_RE.test(l) && !AD_LINE_RE.test(l) && !PAGE_NUMBER_RE.test(l));
+    .filter((l) => l.length > 0 && !DIVIDER_RE.test(l) && !AD_LINE_RE.test(l));
+}
+
+const CN_DIGITS = { 零: 0, 〇: 0, 一: 1, 二: 2, 两: 2, 兩: 2, 三: 3, 四: 4, 五: 5, 六: 6, 七: 7, 八: 8, 九: 9 };
+const CN_UNITS = { 十: 10, 百: 100, 千: 1000 };
+
+function parseChineseNumber(s) {
+  if (/^[0-9０-９]+$/.test(s)) return Number(s.replace(/[０-９]/g, (c) => c.charCodeAt(0) - 0xFF10));
+  let total = 0;
+  let digit = 0;
+  for (const ch of s) {
+    if (ch in CN_DIGITS) digit = CN_DIGITS[ch];
+    else if (ch in CN_UNITS) { total += (digit || 1) * CN_UNITS[ch]; digit = 0; }
+    else return NaN;
+  }
+  return total + digit;
+}
+
+function toChineseNumber(n) {
+  const d = '零一二三四五六七八九';
+  if (n < 10) return d[n];
+  if (n < 20) return '十' + (n % 10 ? d[n % 10] : '');
+  if (n < 100) return d[Math.floor(n / 10)] + '十' + (n % 10 ? d[n % 10] : '');
+  return String(n);
+}
+
+function chapterNumber(title) {
+  const m = title.match(/^第([0-9０-９零〇一二两兩三四五六七八九十百千]+)[章回节節话話]/);
+  return m ? parseChineseNumber(m[1]) : NaN;
 }
 
 // Many TXT files are hard-wrapped at a fixed width; that width shows up as the most common long line length.
@@ -132,7 +160,7 @@ function mergeWrappedLines(lines) {
   const out = [];
   let prevPhysical = '';
   for (const line of lines) {
-    const isHeading = line.length <= 40 && CHAPTER_RE.test(line);
+    const isHeading = PAGE_NUMBER_RE.test(line) || (line.length <= 40 && CHAPTER_RE.test(line));
     const wrapped = prevPhysical.length >= width - 2 && !SENTENCE_END_RE.test(prevPhysical);
     if (out.length > 0 && !isHeading && wrapped) out[out.length - 1] += line;
     else out.push(line);
@@ -145,11 +173,25 @@ function splitChapters(text) {
   const lines = mergeWrappedLines(cleanLines(text));
   const chapters = [];
   let current = { title: '前言', lines: [] };
+  let lastNum = 0;
+
+  const startChapter = (title) => {
+    if (current.lines.length > 0 || chapters.length > 0) chapters.push(current);
+    current = { title, lines: [] };
+  };
 
   for (const line of lines) {
-    if (line.length <= 40 && CHAPTER_RE.test(line)) {
-      if (current.lines.length > 0 || chapters.length > 0) chapters.push(current);
-      current = { title: line, lines: [] };
+    if (PAGE_NUMBER_RE.test(line)) {
+      // A bare number is a chapter heading only if it continues the chapter sequence; otherwise it's a page number.
+      const n = Number(line);
+      if (lastNum > 0 && n === lastNum + 1) {
+        startChapter(`第${toChineseNumber(n)}章`);
+        lastNum = n;
+      }
+    } else if (line.length <= 40 && CHAPTER_RE.test(line)) {
+      startChapter(line);
+      const n = chapterNumber(line);
+      if (!Number.isNaN(n)) lastNum = n;
     } else {
       current.lines.push(line);
     }
